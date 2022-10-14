@@ -22,8 +22,10 @@ hazard (PSH) model proposed by Fine and Gray (Fine and Gray 1999) has
 become a popular semi-parametric model for competing risks data, which
 can be regarded as an adaption of the Cox PH model for the
 subdistribution hazard related to the cumulative incidence function. In
-this document, we demonstrate the implementation of a a PSH-based gene
+this document, we demonstrate the implementation of a PSH-based gene
 screening procedure for high-throughput competing risks data.
+
+## The Gene Screening Procedure
 
 Let
 ![T](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;T "T")
@@ -212,9 +214,9 @@ statistical inference.
 
 Gene expression data and clinical data for patients with
 non-muscle-invasive bladder carcinoma were acquired from GEO database
-GSE5479 \[accession number GSE5479; Dyrskjøt et al. (2007)\]. In total,
-300 patients with complete information on 1,381 microarray features and
-5 important clinical covariates (age, sex, reevaluated WHO grade,
+GSE5479 (accession number GSE5479, Dyrskjøt et al. 2007). In total, 300
+patients with complete information on 1,381 microarray features and 5
+important clinical covariates (age, sex, reevaluated WHO grade,
 reevaluated pathological disease stage and BCG/MMC treatment) were
 included for analysis. The primary endpoint is the time to progression.
 Progression or death from bladder cancer, which is the event of
@@ -278,7 +280,7 @@ d <- 234
 ix <- c(1:5,7+ow[1:d]) # variables for further selection
 ```
 
-The likelihood-based boosting approach (Binder et al. 2009) (CoxBoost)
+The likelihood-based boosting approach (CoxBoost, Binder et al. 2009)
 can then be applied to the reduced training data for further gene
 selection and prognostic modeling simultaneously through the R package .
 The clinical covariates remain unpenalized in the boosting procedure and
@@ -300,18 +302,18 @@ fit.cb <- coxboost(fm.csis, data=Xtr, cause=1, cv=F,
                    CoxBoost.stepno=optim.res$cv.res$optimal.step)
 ```
 
-A patient’s risk score was defined as the linear combination of the
-selected genes where the coefficients were extracted from the above
-fitted model (i.e. the gene signature values). The risk score was used
-to classify the patient as having high or low risk, with the median
-score of the training group being the cutoff. The same cutoff value was
-also applied when assigning the test samples. The two risk groups were
+A patient’s risk score is defined as the linear combination of the
+selected genes where the coefficients are extracted from the above
+fitted model (i.e. the gene signature values). The risk score is used to
+classify the patient as having high or low risk, with the median score
+of the training group being the cutoff. The same cutoff value is also
+applied when assigning the test samples. The two risk groups are
 contrasted by cumulative incidence analysis.
 
 ``` r
 coef.cb = fit.cb$coxboost$coefficients[fit.cb$stepno+1,]
-fitted.lp <- drop(as.matrix(Xtr[,ix][,-(1:5)])%*%matrix(coef.cb[-(1:5)]))
-pred.lp <- drop(as.matrix(Xte[,ix][,-(1:5)])%*%matrix(coef.cb[-(1:5)]))
+fitted.lp <- drop(as.matrix(Xtr[,ix][,-(1:5)])%*%matrix(coef.cb[-(1:5)])) # training risk scores 
+pred.lp <- drop(as.matrix(Xte[,ix][,-(1:5)])%*%matrix(coef.cb[-(1:5)])) # testing risk scores
 risk.test <- pred.lp>median(fitted.lp)
 library(cmprsk)
 ciftest <- cuminc(Xte$time, Xte$cause, risk.test)
@@ -344,7 +346,7 @@ stratification (p-value = 0.033 for the testing cohort).
 Lastly, we fit a PSH model to the entire dataset to make inference about
 independent prognostic factors associated with progression, where the
 gene signature identified by the PSH-CSIS+CoxBoost model and the five
-clinical covariates were used.
+clinical covariates are used.
 
 ``` r
 blca.final <- data.frame(blca1[,1:7],
